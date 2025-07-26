@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Balanza emocional</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin: 20px;}
+    h1 { color: #333; }
+    #balance-container { position: relative; width: 400px; height: 200px; margin: 0 auto; }
+    #beam { position: absolute; top: 90px; left: 0; right: 0; height: 10px; background: #555; transform-origin: center; transition: transform 0.3s; }
+    #left-pan, #right-pan {
+      position: absolute; width: 150px; height: 20px;
+      bottom: 0; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #left-pan { left: 40px; background: #EF9A9A; } /* rojo claro */
+    #right-pan { right: 40px; background: #A5D6A7; } /* verde claro */
+    .emoji { font-size: 2rem; margin: 0 5px; cursor: grab; }
+    #palette { margin-top: 30px; display: flex; flex-wrap: wrap; justify-content: center; }
+    .item {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 10px; margin: 5px;
+      font-size: 2rem; cursor: grab;
+      width: 80px;
+    }
+    .item small { font-size: 0.75rem; color: #555; text-align: center; }
+    #reset-btn { margin-top: 20px; padding: 10px 20px; font-size: 1rem; }
+    #messages { margin-top: 20px; font-size: 1.1rem; font-weight: bold; }
+    #weights { display: flex; justify-content: space-around; max-width: 400px; margin: 10px auto; font-weight: bold; }
+    textarea { width: 90%; max-width: 500px; margin-top: 20px; padding: 10px; font-size: 1rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Balanza emocional</h1>
+  <h3>Izquierda: Realidad | Derecha: Lo que creo que gano</h3>
+
+  <div id="balance-container">
+    <div id="beam"></div>
+    <div id="left-pan"></div>
+    <div id="right-pan"></div>
+  </div>
+
+  <div id="weights">
+    <div id="left-weight">Realidad: 0</div>
+    <div id="right-weight">Ganancias: 0</div>
+  </div>
+
+  <div id="palette">
+    <!-- Lado negativo (REALIDAD) -->
+    <div class="item" data-side="left" data-value="3">💔<small>Relaciones rotas</small></div>
+    <div class="item" data-side="left" data-value="3">😞<small>Arrepentimiento</small></div>
+    <div class="item" data-side="left" data-value="4">🤕<small>Salud dañada</small></div>
+    <div class="item" data-side="left" data-value="4">📉<small>Oportunidades perdidas</small></div>
+    <div class="item" data-side="left" data-value="3">🛑<small>Falta de control</small></div>
+    <div class="item" data-side="left" data-value="3">👎<small>Mala reputación</small></div>
+    <div class="item" data-side="left" data-value="2">😴<small>Problemas para dormir</small></div>
+    <div class="item" data-side="left" data-value="4">💸<small>Dinero perdido</small></div>
+    <div class="item" data-side="left" data-value="3">😠<small>Conflictos</small></div>
+    <div class="item" data-side="left" data-value="5">🚫<small>Dependencia</small></div>
+
+    <!-- Lado positivo (GANANCIAS SUPUESTAS) -->
+    <div class="item" data-side="right" data-value="1">🎉<small>Diversión</small></div>
+    <div class="item" data-side="right" data-value="1">😂<small>Buen humor</small></div>
+    <div class="item" data-side="right" data-value="1">🧍<small>Compañía</small></div>
+    <div class="item" data-side="right" data-value="1">😌<small>Relajación</small></div>
+    <div class="item" data-side="right" data-value="1">💃<small>Libertad</small></div>
+    <div class="item" data-side="right" data-value="1">😎<small>Confianza</small></div>
+    <div class="item" data-side="right" data-value="1">🍻<small>Socializar</small></div>
+    <div class="item" data-side="right" data-value="1">🎶<small>Ambiente agradable</small></div>
+    <div class="item" data-side="right" data-value="1">😍<small>Sentirse aceptada</small></div>
+  </div>
+
+  <button id="reset-btn">Reiniciar balanza</button>
+  <div id="messages"></div>
+
+  <h3>¿Qué observo al ver mi balanza emocional?</h3>
+  <textarea rows="4" placeholder="Escribe aquí tu reflexión..."></textarea>
+
+<script>
+  const leftPan = document.getElementById('left-pan');
+  const rightPan = document.getElementById('right-pan');
+  const beam = document.getElementById('beam');
+  const resetBtn = document.getElementById('reset-btn');
+  const messages = document.getElementById('messages');
+  const leftWeightText = document.getElementById('left-weight');
+  const rightWeightText = document.getElementById('right-weight');
+  let leftWeight = 0, rightWeight = 0;
+
+  document.querySelectorAll('.item').forEach(item => {
+    item.draggable = true;
+    item.addEventListener('dragstart', ev => {
+      ev.dataTransfer.setData('text/plain', JSON.stringify({
+        emoji: item.textContent.trim(),
+        side: item.dataset.side,
+        value: item.dataset.value
+      }));
+    });
+  });
+
+  [leftPan, rightPan].forEach(pan => {
+    pan.addEventListener('dragover', ev => ev.preventDefault());
+    pan.addEventListener('drop', ev => {
+      ev.preventDefault();
+      const data = JSON.parse(ev.dataTransfer.getData('text/plain'));
+      const span = document.createElement('span');
+      span.textContent = data.emoji;
+      span.className = 'emoji';
+      span.dataset.value = data.value;
+      pan.appendChild(span);
+      if (pan === leftPan) leftWeight += +data.value;
+      else rightWeight += +data.value;
+      span.addEventListener('dblclick', () => {
+        pan.removeChild(span);
+        if (pan === leftPan) leftWeight -= +data.value;
+        else rightWeight -= +data.value;
+        updateBeam();
+      });
+      updateBeam();
+    });
+  });
+
+  function updateBeam() {
+    const diff = rightWeight - leftWeight;
+    const maxAngle = 15;
+    let angle = 0;
+    if (diff > 0) angle = Math.min(maxAngle, diff * 1.5);
+    else if (diff < 0) angle = Math.max(-maxAngle, diff * 1.5);
+    beam.style.transform = `rotate(${angle}deg)`;
+
+    leftWeightText.textContent = `Realidad: ${leftWeight}`;
+    rightWeightText.textContent = `Ganancias: ${rightWeight}`;
+
+    showMessage(diff);
+  }
+
+  function showMessage(diff) {
+    if (diff < -4) {
+      messages.textContent = '⚠️ La realidad pesa mucho más. Tal vez lo que crees que ganas no compensa.';
+    } else if (diff > 4) {
+      messages.textContent = '✅ Lo que crees que ganas tiene peso emocional importante para ti.';
+    } else {
+      messages.textContent = '⚖️ Hay un equilibrio o una duda entre lo que ganas y lo que en verdad te afecta.';
+    }
+  }
+
+  resetBtn.addEventListener('click', () => {
+    leftPan.innerHTML = '';
+    rightPan.innerHTML = '';
+    leftWeight = 0;
+    rightWeight = 0;
+    beam.style.transform = 'rotate(0deg)';
+    messages.textContent = '';
+    leftWeightText.textContent = 'Realidad: 0';
+    rightWeightText.textContent = 'Ganancias: 0';
+  });
+</script>
+
+</body>
+</html>
